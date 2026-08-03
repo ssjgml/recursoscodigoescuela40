@@ -70,14 +70,18 @@ def clean_text(text):
         'Ãº': 'ú',
         'Ã±': 'ñ',
         'Ã‘': 'Ñ',
-        'Ã¡': 'á',
         'Ã‰': 'É',
-        'Ã‘': 'Ñ',
+        'Ãš': 'Ú',
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
     text = re.sub(r'(\d)�', r'\1º', text)
     text = text.replace('n�', 'ñ').replace('N�', 'Ñ')
+    text = text.replace('a�', 'á').replace('A�', 'Á')
+    text = text.replace('e�', 'é').replace('E�', 'É')
+    text = text.replace('i�', 'í').replace('I�', 'Í')
+    text = text.replace('o�', 'ó').replace('O�', 'Ó')
+    text = text.replace('u�', 'ú').replace('U�', 'Ú')
     return text
 
 
