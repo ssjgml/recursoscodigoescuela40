@@ -27,6 +27,9 @@ FIELD_ALIASES = {
     'enlaceweb': 'Enlace web',
     'enlace': 'Enlace web',
     'etiquetas': 'Etiquetas',
+    'transcripcion': 'Transcripcion',
+    'transcripción': 'Transcripcion',
+    'transcripci�n': 'Transcripcion',
 }
 
 ETAPAS = ['Infantil', 'Primaria', 'Secundaria', 'Especial']
@@ -57,15 +60,21 @@ def clean_text(text):
         'Descripciï¿½n': 'Descripción',
         'Tecnologï¿½a': 'Tecnología',
         'cï¿½digo': 'código',
+        'T�tulo': 'Título',
+        'Descripci�n': 'Descripción',
+        'Transcripci�n': 'Transcripción',
+        'Modalidad/Tecnolog�a': 'Modalidad/Tecnología',
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
+    text = re.sub(r'(\d)�', r'\1º', text)
     return text
 
 
 def canonical_header(name):
     if not isinstance(name, str):
         return ''
+    name = clean_text(name)
     normalized = normalize(name)
     normalized = re.sub(r'[^a-z0-9]', '', normalized)
     return normalized
@@ -92,20 +101,69 @@ def get_row_value(row, *names):
     return ''
 
 
+def get_row_field(row, *names):
+    for name in names:
+        value = row.get(name)
+        if isinstance(value, str):
+            cleaned_value = clean_text(value).strip()
+            if cleaned_value:
+                return cleaned_value
+    return ''
+
+
 def standardize_row(row):
     cleaned = {clean_text(k): clean_text(v) if isinstance(v, str) else v for k, v in row.items()}
     standardized = {}
     for key, value in cleaned.items():
         canonical = canonical_header(key)
         mapped = FIELD_ALIASES.get(canonical)
+        if not mapped:
+            if canonical in {canonical_header('título'), canonical_header('titulo'), canonical_header('t�tulo')}:
+                mapped = 'Título'
+            elif canonical in {canonical_header('descripción'), canonical_header('descripcion'), canonical_header('descripci�n')}:
+                mapped = 'Descripción'
+            elif canonical in {canonical_header('modalidad/tecnologia'), canonical_header('modalidadtecnologia'), canonical_header('modalidad/tecnolog�a')}:
+                mapped = 'Modalidad/Tecnologia'
+            elif canonical in {canonical_header('etapa educativa'), canonical_header('etapaeducativa')}:
+                mapped = 'Etapa educativa'
+            elif canonical in {canonical_header('evento/programa'), canonical_header('eventoprograma')}:
+                mapped = 'Evento/Programa'
+            elif canonical in {canonical_header('enlace web'), canonical_header('enlaceweb'), canonical_header('enlace')}:
+                mapped = 'Enlace web'
+            elif canonical in {canonical_header('etiquetas')}:
+                mapped = 'Etiquetas'
+
         if mapped:
-            standardized[mapped] = value
+            if mapped in standardized:
+                standardized[mapped] += ' ' + value
+            else:
+                standardized[mapped] = value
         else:
             standardized[key] = value
     if standardized.get('Enlace web', '').startswith('Dhttps://'):
         standardized['Enlace web'] = standardized['Enlace web'][1:]
     if standardized.get('Enlace web', '').startswith('Dhttp://'):
         standardized['Enlace web'] = standardized['Enlace web'][1:]
+
+    # Ensure common fields are present under the normalized names.
+    fallback_fields = {
+        'Título': ['Título', 'T�tulo', 'Titulo'],
+        'Descripción': ['Descripción', 'Descripci�n', 'Transcripcion', 'Transcripción', 'Descripcion'],
+        'Modalidad/Tecnologia': ['Modalidad/Tecnologia', 'Modalidad/Tecnología', 'Modalidad/Tecnolog�a'],
+        'Enlace web': ['Enlace web', 'Enlace'],
+        'Etapa educativa': ['Etapa educativa'],
+        'Fuente': ['Fuente'],
+        'Nivel': ['Nivel'],
+        'Edad': ['Edad'],
+        'Etiquetas': ['Etiquetas'],
+    }
+    for target, aliases in fallback_fields.items():
+        if not standardized.get(target):
+            for alias in aliases:
+                if standardized.get(alias):
+                    standardized[target] = standardized[alias]
+                    break
+
     return standardized
 
 
@@ -132,6 +190,8 @@ def parse_age_range(text):
     if not isinstance(text, str):
         return None
     normalized = normalize(text)
+    if 'años' in normalized:
+        normalized = normalized.replace('años', 'a')
     if '+' in normalized or 'más' in normalized or 'mas' in normalized:
         numbers = [int(n) for n in re.findall(r'\b(\d{1,2})\b', normalized)]
         if numbers:
@@ -148,6 +208,30 @@ def parse_age_range(text):
     if len(numbers) == 1:
         return (numbers[0], numbers[0])
     return None
+
+    if not isinstance(text, str):
+        return None
+    normalized = normalize(text)
+    if '+' in normalized or 'más' in normalized or 'mas' in normalized:
+        numbers = [int(n) for n in re.findall(r'\b(\d{1,2})\b', normalized)]
+        if numbers:
+            return (numbers[0], None)
+    if 'a partir de' in normalized or 'desde' in normalized or 'mayor' in normalized:
+        numbers = [int(n) for n in re.findall(r'\b(\d{1,2})\b', normalized)]
+        if numbers:
+            return (numbers[0], None)
+        return None
+
+    numbers = [int(n) for n in re.findall(r'\b(\d{1,2})\b', normalized)]
+    if len(numbers) >= 2:
+        return (min(numbers), max(numbers))
+    if len(numbers) == 1:
+        return (numbers[0], numbers[0])
+    return None
+
+
+# Canonicalize alias keys so mojibake or accented header names still match.
+FIELD_ALIASES = {canonical_header(k): v for k, v in FIELD_ALIASES.items()}
 
 
 def age_matches(row_age, filter_age):
@@ -205,19 +289,19 @@ def age_allowed_for_stage(stage, age_value):
 
 def build_filter_options(data, selected_stage=None):
     fuente_values = sorted(
-        {row.get('Fuente', '').strip() for row in data if row.get('Fuente', '').strip()},
+        {get_row_field(row, 'Fuente').strip() for row in data if get_row_field(row, 'Fuente').strip()},
         key=lambda x: x.lower()
     )
     modalidad_values = sorted(
-        {row.get('Modalidad/Tecnologia', '').strip() for row in data if row.get('Modalidad/Tecnologia', '').strip()},
+        {get_row_field(row, 'Modalidad/Tecnologia', 'Modalidad/Tecnología', 'Modalidad/Tecnolog�a').strip() for row in data if get_row_field(row, 'Modalidad/Tecnologia', 'Modalidad/Tecnología', 'Modalidad/Tecnolog�a').strip()},
         key=lambda x: x.lower()
     )
     nivel_values = sorted(
-        {row.get('Nivel', '').strip() for row in data if row.get('Nivel', '').strip() and level_allowed_for_stage(selected_stage, row.get('Nivel', '').strip())},
+        {get_row_field(row, 'Nivel').strip() for row in data if get_row_field(row, 'Nivel').strip() and level_allowed_for_stage(selected_stage, get_row_field(row, 'Nivel').strip())},
         key=lambda x: x.lower()
     )
     edad_values = sorted(
-        {row.get('Edad', '').strip() for row in data if row.get('Edad', '').strip() and age_allowed_for_stage(selected_stage, row.get('Edad', '').strip())},
+        {get_row_field(row, 'Edad').strip() for row in data if get_row_field(row, 'Edad').strip() and age_allowed_for_stage(selected_stage, get_row_field(row, 'Edad').strip())},
         key=lambda x: (float('inf') if x == 'a partir de 16' else int(re.findall(r'\d+', x)[0]) if re.findall(r'\d+', x) else 999, x)
     )
     return {
@@ -234,10 +318,18 @@ def matches_filters(row, params):
         if not value:
             continue
         if field == 'Edad':
-            if not age_matches(row.get(field, ''), value):
+            if not age_matches(get_row_field(row, 'Edad'), value):
                 return False
             continue
-        if normalize(value) not in normalize(row.get(field, '')):
+        if field == 'Modalidad/Tecnologia':
+            if normalize(value) not in normalize(get_row_field(row, 'Modalidad/Tecnologia', 'Modalidad/Tecnología', 'Modalidad/Tecnolog�a')):
+                return False
+            continue
+        if field == 'Etapa educativa':
+            if normalize(value) not in normalize(get_row_field(row, 'Etapa educativa')):
+                return False
+            continue
+        if normalize(value) not in normalize(get_row_field(row, field, field.replace(' ', ''))):
             return False
     return True
 
