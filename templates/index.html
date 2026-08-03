@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Base de datos educativa</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: Inter, system-ui, sans-serif;
+            background: #f5f7fb;
+            color: #1f2937;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        header {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        header h1 {
+            margin: 0;
+            font-size: clamp(2rem, 3vw, 3rem);
+            letter-spacing: -0.04em;
+        }
+        header p {
+            margin: 0;
+            color: #4b5563;
+            max-width: 100%;
+            line-height: 1.7;
+        }
+        .toolbar {
+            display: grid;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 8px;
+        }
+        .filters select,
+        .toolbar input {
+            width: 100%;
+            border: none;
+            border-radius: 16px;
+            padding: 16px 20px;
+            font-size: 1rem;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+            background: white;
+            appearance: none;
+        }
+        .filters select {
+            background: white;
+        }
+        .filters label {
+            display: block;
+            font-size: 0.85rem;
+            color: #4b5563;
+            margin-bottom: 6px;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin-top: 24px;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+            display: flex;
+            flex-direction: column;
+            min-height: 280px;
+        }
+        .card-media {
+            position: relative;
+            min-height: 140px;
+            background: linear-gradient(180deg, #eef2ff 0%, #eef4ff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card-media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .card-media .preview-fallback {
+            display: none;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            font-size: 0.95rem;
+            padding: 16px;
+            text-align: center;
+        }
+        .card-content {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            flex: 1;
+        }
+        .card-content h2 {
+            margin: 0;
+            font-size: 1.15rem;
+            line-height: 1.4;
+        }
+        .meta {
+            color: #6b7280;
+            font-size: 0.95rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .snippet {
+            color: #374151;
+            line-height: 1.7;
+            flex: 1;
+            overflow: hidden;
+        }
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .tag {
+            background: #eef2ff;
+            color: #3730a3;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 0.82rem;
+        }
+        .actions {
+            display: flex;
+            justify-content: flex-start;
+        }
+        .actions a {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            background: #4f46e5;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 999px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .actions a:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 30px rgba(79, 70, 229, 0.24);
+        }
+        .result-count {
+            margin-top: 8px;
+            font-size: 0.98rem;
+            color: #334155;
+        }
+        .empty {
+            padding: 48px;
+            text-align: center;
+            color: #6b7280;
+        }
+        @media (max-width: 640px) {
+            .page {
+                padding: 16px;
+            }
+            .card-content {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header>
+            <div>
+                <h1>Base de datos de recursos · Código Escuela 4.0</h1>
+                <p><strong>Descubre una colección de recursos educativos diseñados para impulsar el pensamiento computacional, la programación, la robótica y las tecnologías digitales en el aula.</strong> Todos los materiales han sido creados por los <strong>Dinamizadores de Transformación Digital y Robótica (DTDR)</strong> de la <strong>Consejería de Educación, Cultura y Deportes de Castilla-La Mancha</strong>, como apoyo a la dotación de dispositivos del programa <strong>Código Escuela 4.0</strong>. Aquí encontrarás propuestas listas para llevar al aula, organizadas por etapa educativa, tecnología, temática y nivel de dificultad, para que puedas localizar fácilmente el recurso que mejor se adapte a tu alumnado. <strong>Explora, inspira y transforma tu aula con Código Escuela 4.0.</strong> 🚀💻🤖</p>
+            </div>
+            <div class="toolbar">
+                <input id="search" placeholder="Busca por título, etiqueta, nivel o contenido..." />
+                <div class="filters">
+                    <label>
+                        Fuente
+                        <select id="filter-fuente"><option value="">Todas</option></select>
+                    </label>
+                    <label>
+                        Etapa educativa
+                        <select id="filter-etapa"><option value="">Todas</option></select>
+                    </label>
+                    <label>
+                        Nivel
+                        <select id="filter-nivel"><option value="">Todos</option></select>
+                    </label>
+                    <label>
+                        Edad
+                        <select id="filter-edad"><option value="">Todas</option></select>
+                    </label>
+                </div>
+                <div id="result-count" class="result-count">Resultados: 0</div>
+            </div>
+        </header>
+
+        <div id="card-grid" class="cards"></div>
+        <footer class="page-footer">
+            <p>Elaborado por inteligencia artificial usando VS Code & Copilot por jjgm140.</p>
+        </footer>
+    </div>
+    <script>
+        const apiUrl = '/api/data';
+        const filtersUrl = '/api/filters';
+        const searchInput = document.getElementById('search');
+        const cardGrid = document.getElementById('card-grid');
+        const filterFuente = document.getElementById('filter-fuente');
+        const filterEtapa = document.getElementById('filter-etapa');
+        const filterNivel = document.getElementById('filter-nivel');
+        const filterEdad = document.getElementById('filter-edad');
+
+        function populateSelect(select, options) {
+            if (!options || !Array.isArray(options)) return;
+            options.forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                select.appendChild(option);
+            });
+        }
+
+        async function loadFilters() {
+            const response = await fetch(filtersUrl);
+            const data = await response.json();
+            populateSelect(filterFuente, data['Fuente']);
+            populateSelect(filterEtapa, data['Etapa educativa']);
+            populateSelect(filterNivel, data['Nivel']);
+            populateSelect(filterEdad, data['Edad']);
+        }
+
+        async function loadData(query = '') {
+            const params = new URLSearchParams();
+            if (query) params.set('q', query);
+            if (filterFuente.value) params.set('fuente', filterFuente.value);
+            if (filterEtapa.value) params.set('etapa', filterEtapa.value);
+            if (filterNivel.value) params.set('nivel', filterNivel.value);
+            if (filterEdad.value) params.set('edad', filterEdad.value);
+            const response = await fetch(apiUrl + (params.toString() ? '?' + params.toString() : ''));
+            const data = await response.json();
+            renderCards(data);
+        }
+
+        function addFilterListeners() {
+            searchInput.addEventListener('input', () => loadData(searchInput.value));
+            [filterFuente, filterEtapa, filterNivel, filterEdad].forEach(element => {
+                element.addEventListener('change', () => loadData(searchInput.value));
+            });
+        }
+
+        async function init() {
+            await loadFilters();
+            addFilterListeners();
+            await loadData();
+        }
+
+        function renderCards(data) {
+            const countText = document.getElementById('result-count');
+            if (countText) {
+                countText.textContent = `Resultados: ${data.length}`;
+            }
+            if (!data.length) {
+                cardGrid.innerHTML = '<div class="empty">No hay resultados para tu búsqueda.</div>';
+                return;
+            }
+
+            cardGrid.innerHTML = data.map(item => {
+                const title = item['Título'] || item['T�tulo'] || 'Sin título';
+                const description = item['Transcripcion'] || item['Descripci�n'] || '';
+                const snippet = description.length > 190 ? description.slice(0, 190) + '...' : description;
+                const tags = item['Etiquetas'] ? item['Etiquetas'].split(',').map(t => t.trim()).filter(Boolean).slice(0, 6) : [];
+                const href = item['Enlace web'] || item['Enlace'] || '#';
+                const preview = item.preview_image ? `<img src="${escapeHtml(item.preview_image)}" alt="Vista previa del enlace" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : '';
+
+                return `<article class="card">
+                    <div class="card-media">${preview}<div class="preview-fallback">Vista previa no disponible</div></div>
+                    <div class="card-content">
+                        <h2>${escapeHtml(title)}</h2>
+                        <div class="meta">${escapeHtml(item['Fuente'] || '')} ${item['Nivel'] ? '• ' + escapeHtml(item['Nivel']) : ''} ${item['Edad'] ? '• ' + escapeHtml(item['Edad']) : ''}</div>
+                        <p class="snippet">${escapeHtml(snippet)}</p>
+                        <div class="tags">${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
+                        <div class="actions"><a href="${escapeHtml(href)}" target="_blank" rel="noopener">Abrir recurso</a></div>
+                    </div>
+                </article>`;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        init();
+    </script>
+</body>
+</html>
