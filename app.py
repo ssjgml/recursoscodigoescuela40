@@ -52,7 +52,6 @@ def clean_text(text):
         pass
     replacements = {
         'ï¿½': 'º',
-        '�': 'º',
         'aï¿½os': 'años',
         'Aï¿½os': 'Años',
         'Educaciï¿½n': 'Educación',
@@ -64,10 +63,21 @@ def clean_text(text):
         'Descripci�n': 'Descripción',
         'Transcripci�n': 'Transcripción',
         'Modalidad/Tecnolog�a': 'Modalidad/Tecnología',
+        'Ã¡': 'á',
+        'Ã©': 'é',
+        'Ã­': 'í',
+        'Ã³': 'ó',
+        'Ãº': 'ú',
+        'Ã±': 'ñ',
+        'Ã‘': 'Ñ',
+        'Ã¡': 'á',
+        'Ã‰': 'É',
+        'Ã‘': 'Ñ',
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
     text = re.sub(r'(\d)�', r'\1º', text)
+    text = text.replace('n�', 'ñ').replace('N�', 'Ñ')
     return text
 
 
@@ -287,13 +297,24 @@ def age_allowed_for_stage(stage, age_value):
     return row_min <= stage_max and stage_min <= row_max
 
 
+def split_modality_terms(value):
+    if not isinstance(value, str):
+        return []
+    cleaned = value.strip()
+    if not cleaned:
+        return []
+    separators = r'[;,\|/]+\s*'
+    parts = [part.strip() for part in re.split(separators, cleaned) if part.strip()]
+    return parts
+
+
 def build_filter_options(data, selected_stage=None):
     fuente_values = sorted(
         {get_row_field(row, 'Fuente').strip() for row in data if get_row_field(row, 'Fuente').strip()},
         key=lambda x: x.lower()
     )
     modalidad_values = sorted(
-        {get_row_field(row, 'Modalidad/Tecnologia', 'Modalidad/Tecnología', 'Modalidad/Tecnolog�a').strip() for row in data if get_row_field(row, 'Modalidad/Tecnologia', 'Modalidad/Tecnología', 'Modalidad/Tecnolog�a').strip()},
+        {term for row in data for term in split_modality_terms(get_row_field(row, 'Modalidad/Tecnologia', 'Modalidad/Tecnología', 'Modalidad/Tecnolog�a'))},
         key=lambda x: x.lower()
     )
     nivel_values = sorted(
@@ -313,6 +334,21 @@ def build_filter_options(data, selected_stage=None):
     }
 
 
+def modality_matches(row_value, selected_value):
+    if not selected_value:
+        return True
+    if not isinstance(row_value, str):
+        return False
+    row_value_normalized = normalize(row_value)
+    selected_normalized = normalize(selected_value)
+    if selected_normalized in row_value_normalized:
+        return True
+    for term in split_modality_terms(row_value):
+        if normalize(term) == selected_normalized:
+            return True
+    return False
+
+
 def matches_filters(row, params):
     for field, value in params.items():
         if not value:
@@ -322,7 +358,7 @@ def matches_filters(row, params):
                 return False
             continue
         if field == 'Modalidad/Tecnologia':
-            if normalize(value) not in normalize(get_row_field(row, 'Modalidad/Tecnologia', 'Modalidad/Tecnología', 'Modalidad/Tecnolog�a')):
+            if not modality_matches(get_row_field(row, 'Modalidad/Tecnologia', 'Modalidad/Tecnología', 'Modalidad/Tecnolog�a'), value):
                 return False
             continue
         if field == 'Etapa educativa':

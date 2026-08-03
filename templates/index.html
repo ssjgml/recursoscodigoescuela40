@@ -59,6 +59,25 @@
             background: white;
             appearance: none;
         }
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .toolbar-actions button {
+            border: none;
+            border-radius: 16px;
+            padding: 14px 20px;
+            background: #e5e7eb;
+            color: #1f2937;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+        .toolbar-actions button:hover {
+            background: #d1d5db;
+        }
         .filters select {
             background: white;
         }
@@ -215,7 +234,10 @@
                         <select id="filter-edad"><option value="">Todas</option></select>
                     </label>
                 </div>
-                <div id="result-count" class="result-count">Resultados: 0</div>
+                <div class="toolbar-actions">
+                    <button id="clear-filters" type="button">Borrar filtros</button>
+                    <div id="result-count" class="result-count">Resultados: 0</div>
+                </div>
             </div>
         </header>
 
@@ -234,6 +256,7 @@
         const filterModalidad = document.getElementById('filter-modalidad');
         const filterNivel = document.getElementById('filter-nivel');
         const filterEdad = document.getElementById('filter-edad');
+        const clearFiltersButton = document.getElementById('clear-filters');
 
         function populateSelect(select, options, preserveValue = '') {
             if (!options || !Array.isArray(options)) return;
@@ -289,6 +312,21 @@
             await loadFilters();
         }
 
+        function resetFilters() {
+            searchInput.value = '';
+            filterFuente.value = '';
+            filterEtapa.value = '';
+            filterModalidad.value = '';
+            filterNivel.value = '';
+            filterEdad.value = '';
+        }
+
+        async function clearFilters() {
+            resetFilters();
+            await refreshFilters();
+            await loadData();
+        }
+
         function addFilterListeners() {
             searchInput.addEventListener('input', () => loadData(searchInput.value));
             [filterFuente, filterModalidad, filterNivel, filterEdad].forEach(element => {
@@ -298,6 +336,7 @@
                 await refreshFilters();
                 loadData(searchInput.value);
             });
+            clearFiltersButton.addEventListener('click', clearFilters);
         }
 
         async function init() {
