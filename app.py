@@ -45,8 +45,8 @@ def clean_text(text):
         return ''
     text = text.strip()
     try:
-        fixed = text.encode('latin1').decode('utf-8')
-        if fixed and '�' not in fixed:
+        fixed = text.encode('latin1', errors='replace').decode('utf-8', errors='replace')
+        if fixed and fixed.count('�') < text.count('�'):
             text = fixed
     except Exception:
         pass
@@ -72,6 +72,7 @@ def clean_text(text):
         'Ã‘': 'Ñ',
         'Ã‰': 'É',
         'Ãš': 'Ú',
+        'Ã‘': 'Ñ',
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
