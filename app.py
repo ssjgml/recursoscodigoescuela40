@@ -16,20 +16,12 @@ FIELD_ALIASES = {
     'edad': 'Edad',
     'modalidadtecnologia': 'Modalidad/Tecnologia',
     'modalidad/tecnologia': 'Modalidad/Tecnologia',
-    'modalidad/tecnología': 'Modalidad/Tecnologia',
-    'modalidad/tecnolog�a': 'Modalidad/Tecnologia',
     'titulo': 'Título',
-    'título': 'Título',
-    't�tulo': 'Título',
     'descripcion': 'Descripción',
-    'descripción': 'Descripción',
-    'descripci�n': 'Descripción',
+    'transcripcion': 'Transcripcion',
     'enlaceweb': 'Enlace web',
     'enlace': 'Enlace web',
     'etiquetas': 'Etiquetas',
-    'transcripcion': 'Transcripcion',
-    'transcripción': 'Transcripcion',
-    'transcripci�n': 'Transcripcion',
 }
 
 ETAPAS = ['Infantil', 'Primaria', 'Secundaria', 'Especial']
@@ -59,9 +51,11 @@ def clean_text(text):
         'Descripciï¿½n': 'Descripción',
         'Tecnologï¿½a': 'Tecnología',
         'cï¿½digo': 'código',
+        'Tï¿½tulo': 'Título',
         'T�tulo': 'Título',
         'Descripci�n': 'Descripción',
         'Transcripci�n': 'Transcripción',
+        'Modalidad/Tecnologï¿½a': 'Modalidad/Tecnología',
         'Modalidad/Tecnolog�a': 'Modalidad/Tecnología',
         'Ã¡': 'á',
         'Ã©': 'é',
@@ -72,17 +66,22 @@ def clean_text(text):
         'Ã‘': 'Ñ',
         'Ã‰': 'É',
         'Ãš': 'Ú',
-        'Ã‘': 'Ñ',
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
-    text = re.sub(r'(\d)�', r'\1º', text)
-    text = text.replace('n�', 'ñ').replace('N�', 'Ñ')
-    text = text.replace('a�', 'á').replace('A�', 'Á')
-    text = text.replace('e�', 'é').replace('E�', 'É')
-    text = text.replace('i�', 'í').replace('I�', 'Í')
-    text = text.replace('o�', 'ó').replace('O�', 'Ó')
-    text = text.replace('u�', 'ú').replace('U�', 'Ú')
+
+    repair_chars = '\ufffdï¿½'
+    text = re.sub(r'(?i)t[' + repair_chars + r']tulo', 'Título', text)
+    text = re.sub(r'(?i)descripci[' + repair_chars + r']n', 'Descripción', text)
+    text = re.sub(r'(?i)transcripci[' + repair_chars + r']n', 'Transcripción', text)
+    text = re.sub(r'(?i)modalidad/tecnolog[' + repair_chars + r']a', 'Modalidad/Tecnología', text)
+    text = re.sub(r'(?i)fuen[' + repair_chars + r']te', 'Fuente', text)
+    text = re.sub(r'(?i)even[' + repair_chars + r']to/programa', 'Evento/Programa', text)
+    text = re.sub(r'(?i)enlac[' + repair_chars + r']e web', 'Enlace web', text)
+    text = re.sub(r'(?i)enlac[' + repair_chars + r']web', 'Enlace web', text)
+    text = re.sub(r'([aeiouAEIOU])[' + repair_chars + r']', r'\1', text)
+    text = text.replace('\ufffd', '')
+    text = text.replace('�', '')
     return text
 
 
@@ -92,6 +91,23 @@ def canonical_header(name):
     name = clean_text(name)
     normalized = normalize(name)
     normalized = re.sub(r'[^a-z0-9]', '', normalized)
+
+    repairs = {
+        'ttulo': 'titulo',
+        'totulo': 'titulo',
+        'descripcion': 'descripcion',
+        'descripcinn': 'descripcion',
+        'modalidadtecnologa': 'modalidadtecnologia',
+        'modalidadtecnologoa': 'modalidadtecnologia',
+        'modalidadtecnnologa': 'modalidadtecnologia',
+        'modalidadtecnnologia': 'modalidadtecnologia',
+        'evenotprograma': 'eventoprograma',
+        'fuent': 'fuente',
+        'enlacweb': 'enlaceweb',
+    }
+    for bad, good in repairs.items():
+        if bad in normalized:
+            normalized = normalized.replace(bad, good)
     return normalized
 
 

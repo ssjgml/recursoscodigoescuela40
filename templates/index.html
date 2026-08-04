@@ -356,13 +356,13 @@
             }
 
             cardGrid.innerHTML = data.map(item => {
-                const title = item['Título'] || item['T�tulo'] || 'Sin título';
-                const description = item['Descripción'] || item['Descripci�n'] || item['Transcripcion'] || item['Transcripción'] || '';
+                const title = item['Título'] || item['T�tulo'] || item['Tï¿½tulo'] || item['T?tulo'] || item['totulo'] || 'Sin título';
+                const description = item['Descripción'] || item['Descripci�n'] || item['Descripciï¿½n'] || item['Transcripcion'] || item['Transcripción'] || '';
                 const snippet = description.length > 190 ? description.slice(0, 190) + '...' : description;
                 const tags = item['Etiquetas'] ? item['Etiquetas'].split(',').map(t => t.trim()).filter(Boolean).slice(0, 6) : [];
-                const href = item['Enlace web'] || item['Enlace'] || '#';
+                const href = item['Enlace web'] || item['Enlace'] || item['Enlaceweb'] || '#';
                 const preview = item.preview_image ? `<img src="${escapeHtml(item.preview_image)}" alt="Vista previa del enlace" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : '';
-                const modality = item['Modalidad/Tecnologia'] || item['Modalidad/Tecnología'] || '';
+                const modality = item['Modalidad/Tecnologia'] || item['Modalidad/Tecnología'] || item['Modalidad/Tecnolog�a'] || item['Modalidad/Tecnologï¿½a'] || '';
 
                 return `<article class="card">
                     <div class="card-media">${preview}<div class="preview-fallback">Vista previa no disponible</div></div>
