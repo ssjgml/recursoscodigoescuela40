@@ -6,14 +6,18 @@ from pathlib import Path
 from urllib.parse import quote, urlparse
 
 app = Flask(__name__)
-DATA_FILE = Path('base_datos_v1.csv')
+DATA_FILE = Path('base_datos_v2.csv')
 
 FIELD_ALIASES = {
     'fuente': 'Fuente',
+    'evento': 'Evento/Programa',
     'evento/programa': 'Evento/Programa',
+    'eventoprograma': 'Evento/Programa',
+    'etapa': 'Etapa educativa',
     'etapaeducativa': 'Etapa educativa',
     'nivel': 'Nivel',
     'edad': 'Edad',
+    'dispositivo': 'Modalidad/Tecnologia',
     'modalidadtecnologia': 'Modalidad/Tecnologia',
     'modalidad/tecnologia': 'Modalidad/Tecnologia',
     'titulo': 'Título',
@@ -95,19 +99,23 @@ def canonical_header(name):
     repairs = {
         'ttulo': 'titulo',
         'totulo': 'titulo',
+        't?tulo': 'titulo',
         'descripcion': 'descripcion',
         'descripcinn': 'descripcion',
+        'descripcin': 'descripcion',
         'modalidadtecnologa': 'modalidadtecnologia',
         'modalidadtecnologoa': 'modalidadtecnologia',
         'modalidadtecnnologa': 'modalidadtecnologia',
         'modalidadtecnnologia': 'modalidadtecnologia',
         'evenotprograma': 'eventoprograma',
+        'eventoprograma': 'eventoprograma',
         'fuent': 'fuente',
         'enlacweb': 'enlaceweb',
     }
     for bad, good in repairs.items():
-        if bad in normalized:
-            normalized = normalized.replace(bad, good)
+        if normalized == bad:
+            normalized = good
+            break
     return normalized
 
 
@@ -180,9 +188,10 @@ def standardize_row(row):
     fallback_fields = {
         'Título': ['Título', 'T�tulo', 'Titulo'],
         'Descripción': ['Descripción', 'Descripci�n', 'Transcripcion', 'Transcripción', 'Descripcion'],
-        'Modalidad/Tecnologia': ['Modalidad/Tecnologia', 'Modalidad/Tecnología', 'Modalidad/Tecnolog�a'],
+        'Modalidad/Tecnologia': ['Modalidad/Tecnologia', 'Modalidad/Tecnología', 'Modalidad/Tecnolog�a', 'Dispositivo'],
         'Enlace web': ['Enlace web', 'Enlace'],
-        'Etapa educativa': ['Etapa educativa'],
+        'Etapa educativa': ['Etapa educativa', 'Etapa'],
+        'Evento/Programa': ['Evento/Programa', 'Evento'],
         'Fuente': ['Fuente'],
         'Nivel': ['Nivel'],
         'Edad': ['Edad'],
@@ -223,26 +232,6 @@ def parse_age_range(text):
     normalized = normalize(text)
     if 'años' in normalized:
         normalized = normalized.replace('años', 'a')
-    if '+' in normalized or 'más' in normalized or 'mas' in normalized:
-        numbers = [int(n) for n in re.findall(r'\b(\d{1,2})\b', normalized)]
-        if numbers:
-            return (numbers[0], None)
-    if 'a partir de' in normalized or 'desde' in normalized or 'mayor' in normalized:
-        numbers = [int(n) for n in re.findall(r'\b(\d{1,2})\b', normalized)]
-        if numbers:
-            return (numbers[0], None)
-        return None
-
-    numbers = [int(n) for n in re.findall(r'\b(\d{1,2})\b', normalized)]
-    if len(numbers) >= 2:
-        return (min(numbers), max(numbers))
-    if len(numbers) == 1:
-        return (numbers[0], numbers[0])
-    return None
-
-    if not isinstance(text, str):
-        return None
-    normalized = normalize(text)
     if '+' in normalized or 'más' in normalized or 'mas' in normalized:
         numbers = [int(n) for n in re.findall(r'\b(\d{1,2})\b', normalized)]
         if numbers:
