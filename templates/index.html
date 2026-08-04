@@ -201,6 +201,33 @@
                 padding: 18px;
             }
         }
+        /* Modal for card detail */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1200;
+            padding: 24px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 12px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: auto;
+            box-shadow: 0 30px 80px rgba(2,6,23,0.6);
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-media { min-height: 260px; background: #f8fafc; display:flex; align-items:center; justify-content:center; }
+        .modal-media img { width:100%; height:100%; object-fit:cover; display:block; }
+        .modal-body { padding: 20px; display:flex; flex-direction:column; gap:12px; }
+        .modal-close { position:absolute; right:20px; top:18px; background:transparent; border:none; color:#111827; font-size:22px; cursor:pointer; }
     </style>
 </head>
 <body>
@@ -246,6 +273,21 @@
             <p>Elaborado por inteligencia artificial usando VS Code & Copilot por jjgm140.</p>
         </footer>
     </div>
+    <!-- Modal element for card detail -->
+    <div id="modalOverlay" class="modal-overlay" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <button class="modal-close" aria-label="Cerrar" id="modalClose">✕</button>
+            <div class="modal-media" id="modalMedia"></div>
+            <div class="modal-body">
+                <h2 id="modalTitle"></h2>
+                <div class="meta" id="modalMeta"></div>
+                <p id="modalDescription" class="snippet"></p>
+                <div class="tags" id="modalTags"></div>
+                <div class="actions"><a id="modalLink" href="#" target="_blank" rel="noopener">Abrir recurso</a></div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const apiUrl = '/api/data';
         const filtersUrl = '/api/filters';
@@ -364,7 +406,7 @@
                 const preview = item.preview_image ? `<img src="${escapeHtml(item.preview_image)}" alt="Vista previa del enlace" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : '';
                 const modality = item['Modalidad/Tecnologia'] || item['Modalidad/Tecnología'] || item['Modalidad/Tecnolog�a'] || item['Modalidad/Tecnologï¿½a'] || '';
 
-                return `<article class="card">
+                return `<article class="card" role="button" tabindex="0">
                     <div class="card-media">${preview}<div class="preview-fallback">Vista previa no disponible</div></div>
                     <div class="card-content">
                         <h2>${escapeHtml(title)}</h2>
@@ -375,7 +417,55 @@
                     </div>
                 </article>`;
             }).join('');
+
+            // Attach click handlers to open modal with details
+            const cards = Array.from(cardGrid.querySelectorAll('.card'));
+            cards.forEach((card, idx) => {
+                card.addEventListener('click', () => showModal(data[idx]));
+                card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showModal(data[idx]); } });
+            });
         }
+
+        function showModal(item) {
+            const overlay = document.getElementById('modalOverlay');
+            const title = document.getElementById('modalTitle');
+            const meta = document.getElementById('modalMeta');
+            const desc = document.getElementById('modalDescription');
+            const tags = document.getElementById('modalTags');
+            const media = document.getElementById('modalMedia');
+            const link = document.getElementById('modalLink');
+
+            title.textContent = item['Título'] || item['Titulo'] || item['T�tulo'] || 'Sin título';
+            meta.textContent = `${item['Fuente'] || ''}${item['Nivel'] ? ' • ' + item['Nivel'] : ''}${item['Edad'] ? ' • ' + item['Edad'] : ''}${item['Modalidad/Tecnologia'] ? ' • ' + item['Modalidad/Tecnologia'] : ''}`;
+            desc.textContent = item['Descripción'] || item['Descripcion'] || item['Transcripcion'] || '';
+            tags.innerHTML = (item['Etiquetas'] || '').split(',').map(t => t.trim()).filter(Boolean).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+            link.href = item['Enlace web'] || item['Enlace'] || item['Enlaceweb'] || '#';
+
+            if (item.preview_image) {
+                media.innerHTML = `<img src="${escapeHtml(item.preview_image)}" alt="Vista previa">`;
+            } else {
+                media.innerHTML = '<div class="preview-fallback">Vista previa no disponible</div>';
+            }
+
+            overlay.classList.add('open');
+            overlay.setAttribute('aria-hidden','false');
+            document.getElementById('modalClose').focus();
+        }
+
+        function closeModal() {
+            const overlay = document.getElementById('modalOverlay');
+            overlay.classList.remove('open');
+            overlay.setAttribute('aria-hidden','true');
+        }
+
+        // Close modal listeners
+        document.addEventListener('click', (e) => {
+            const overlay = document.getElementById('modalOverlay');
+            if (!overlay) return;
+            if (overlay.classList.contains('open') && e.target === overlay) closeModal();
+        });
+        document.getElementById('modalClose').addEventListener('click', closeModal);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
         function escapeHtml(text) {
             return String(text)
