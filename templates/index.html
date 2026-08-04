@@ -227,6 +227,9 @@
         .modal-media { min-height: 260px; background: #f8fafc; display:flex; align-items:center; justify-content:center; }
         .modal-media img { width:100%; height:100%; object-fit:cover; display:block; }
         .modal-body { padding: 20px; display:flex; flex-direction:column; gap:12px; }
+        .field-list { display: grid; grid-template-columns: 1fr 2fr; gap: 8px 16px; color:#374151; font-size:0.95rem; }
+        .field-list .field-label { color:#6b7280; font-weight:600; }
+        .full-description { white-space: pre-wrap; line-height:1.6; color:#374151; margin:6px 0 0 0; }
         .modal-close { position:absolute; right:20px; top:18px; background:transparent; border:none; color:#111827; font-size:22px; cursor:pointer; }
     </style>
 </head>
@@ -281,7 +284,11 @@
             <div class="modal-body">
                 <h2 id="modalTitle"></h2>
                 <div class="meta" id="modalMeta"></div>
-                <p id="modalDescription" class="snippet"></p>
+                <div id="modalFields" class="field-list" aria-live="polite"></div>
+                <div id="modalDescriptionWrapper">
+                    <h3 style="margin:0; font-size:0.95rem; color:#374151;">Descripción completa</h3>
+                    <p id="modalDescription" class="full-description"></p>
+                </div>
                 <div class="tags" id="modalTags"></div>
                 <div class="actions"><a id="modalLink" href="#" target="_blank" rel="noopener">Abrir recurso</a></div>
             </div>
