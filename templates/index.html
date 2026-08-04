@@ -456,7 +456,6 @@
             const evento = item['Evento/Programa'] || item['Evento'] || '';
             const enlace = item['Enlace web'] || item['Enlace'] || item['Enlaceweb'] || '#';
             const descripcionCompleta = item['Descripción'] || item['Descripcion'] || item['Descripci�n'] || item['Transcripcion'] || '';
-            const transcripcion = item['Transcripcion'] || '';
 
             title.textContent = titleText;
             meta.textContent = `${fuente}${nivel ? ' • ' + nivel : ''}${edad ? ' • ' + edad : ''}${modalidad ? ' • ' + modalidad : ''}`;
@@ -470,7 +469,6 @@
                 ['Edad', edad],
                 ['Modalidad/Tecnologia', modalidad],
                 ['Enlace web', enlace],
-                ['Transcripcion', transcripcion],
             ].filter(([, value]) => value && String(value).trim().length);
 
             fields.innerHTML = fieldRows
