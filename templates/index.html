@@ -219,18 +219,22 @@
             max-width: 900px;
             width: 100%;
             max-height: 90vh;
-            overflow: auto;
+            overflow: hidden;
             box-shadow: 0 30px 80px rgba(2,6,23,0.6);
             display: flex;
             flex-direction: column;
         }
-        .modal-media { min-height: 260px; background: #f8fafc; display:flex; align-items:center; justify-content:center; }
+        .modal-media { min-height: 260px; max-height: 42vh; overflow: hidden; background: #f8fafc; display:flex; align-items:center; justify-content:center; }
         .modal-media img { width:100%; height:100%; object-fit:cover; display:block; }
-        .modal-body { padding: 20px; display:flex; flex-direction:column; gap:12px; }
+        .modal-body { padding: 20px; display:flex; flex-direction:column; gap:12px; background: #ffffff; border-top: 1px solid #e5e7eb; overflow: auto; }
         .field-list { display: grid; grid-template-columns: 1fr 2fr; gap: 8px 16px; color:#374151; font-size:0.95rem; }
         .field-list .field-label { color:#6b7280; font-weight:600; }
         .full-description { white-space: pre-wrap; line-height:1.6; color:#374151; margin:6px 0 0 0; }
         .modal-close { position:absolute; right:20px; top:18px; background:transparent; border:none; color:#111827; font-size:22px; cursor:pointer; }
+        @media (max-width: 840px) {
+            .field-list { grid-template-columns: 1fr; }
+            .modal-overlay { padding: 10px; }
+        }
     </style>
 </head>
 <body>
@@ -438,15 +442,43 @@
             const title = document.getElementById('modalTitle');
             const meta = document.getElementById('modalMeta');
             const desc = document.getElementById('modalDescription');
+            const fields = document.getElementById('modalFields');
             const tags = document.getElementById('modalTags');
             const media = document.getElementById('modalMedia');
             const link = document.getElementById('modalLink');
 
-            title.textContent = item['Título'] || item['Titulo'] || item['T�tulo'] || 'Sin título';
-            meta.textContent = `${item['Fuente'] || ''}${item['Nivel'] ? ' • ' + item['Nivel'] : ''}${item['Edad'] ? ' • ' + item['Edad'] : ''}${item['Modalidad/Tecnologia'] ? ' • ' + item['Modalidad/Tecnologia'] : ''}`;
-            desc.textContent = item['Descripción'] || item['Descripcion'] || item['Transcripcion'] || '';
+            const titleText = item['Título'] || item['Titulo'] || item['T�tulo'] || 'Sin título';
+            const fuente = item['Fuente'] || '';
+            const nivel = item['Nivel'] || '';
+            const edad = item['Edad'] || '';
+            const modalidad = item['Modalidad/Tecnologia'] || item['Modalidad/Tecnología'] || item['Dispositivo'] || '';
+            const etapa = item['Etapa educativa'] || item['Etapa'] || '';
+            const evento = item['Evento/Programa'] || item['Evento'] || '';
+            const enlace = item['Enlace web'] || item['Enlace'] || item['Enlaceweb'] || '#';
+            const descripcionCompleta = item['Descripción'] || item['Descripcion'] || item['Descripci�n'] || item['Transcripcion'] || '';
+            const transcripcion = item['Transcripcion'] || '';
+
+            title.textContent = titleText;
+            meta.textContent = `${fuente}${nivel ? ' • ' + nivel : ''}${edad ? ' • ' + edad : ''}${modalidad ? ' • ' + modalidad : ''}`;
+            desc.textContent = descripcionCompleta;
+
+            const fieldRows = [
+                ['Fuente', fuente],
+                ['Evento/Programa', evento],
+                ['Etapa educativa', etapa],
+                ['Nivel', nivel],
+                ['Edad', edad],
+                ['Modalidad/Tecnologia', modalidad],
+                ['Enlace web', enlace],
+                ['Transcripcion', transcripcion],
+            ].filter(([, value]) => value && String(value).trim().length);
+
+            fields.innerHTML = fieldRows
+                .map(([label, value]) => `<div class="field-label">${escapeHtml(label)}</div><div>${escapeHtml(String(value))}</div>`)
+                .join('');
+
             tags.innerHTML = (item['Etiquetas'] || '').split(',').map(t => t.trim()).filter(Boolean).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
-            link.href = item['Enlace web'] || item['Enlace'] || item['Enlaceweb'] || '#';
+            link.href = enlace;
 
             if (item.preview_image) {
                 media.innerHTML = `<img src="${escapeHtml(item.preview_image)}" alt="Vista previa">`;
